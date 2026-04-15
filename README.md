@@ -132,44 +132,211 @@ If a category has only one assignment, nothing is dropped.
 
 ---
 
-## Test Cases
+## Test Cases and Results
+
+All tests were run on a fresh database using the inputs below.
+Tasks 7–10 modify data; Tasks 11–12 reflect those modifications.
+
+---
+
+### Task 3 — Show All Tables
+
+**Input:** Menu option `1`
+
+**Result:**
+```
+TABLE: Department     — 2 rows   (Computer Science, Mathematics)
+TABLE: Course         — 3 rows   (CSCI 101, CSCI 350, MATH 201)
+TABLE: Student        — 10 rows
+TABLE: Enrollment     — 20 rows
+TABLE: Category       — 11 rows
+TABLE: Assignment     — 23 rows
+TABLE: Grade          — 155 rows
+```
+
+---
 
 ### Task 4 — Assignment Statistics
-- Input: Course ID `1` (CSCI 101), Assignment ID `7` (Test 1)
-- Expected: avg ≈ 78.86, highest = 94, lowest = 58
+
+**Input:** Course ID `1` (CSCI 101) → Assignment ID `7` (Test 1)
+
+**Result:**
+```
++------------+----------+-------+---------+---------+--------+------------+
+| Assignment | Category | Max   | Average | Highest | Lowest | # Students |
++------------+----------+-------+---------+---------+--------+------------+
+| Test 1     | Tests    | 100.0 | 78.86   | 94.0    | 58.0   | 7          |
++------------+----------+-------+---------+---------+--------+------------+
+```
+
+---
 
 ### Task 5 — List Students in a Course
-- Input: Course ID `1` (CSCI 101)
-- Expected: 7 students listed (Alice Johnson through Grace Lee)
 
-### Task 6 — Students and Scores
-- Input: Course ID `2` (CSCI 350)
-- Expected: 7 students × 8 assignments = 56 rows
+**Input:** Course ID `1` (CSCI 101)
 
-### Task 7 — Add Assignment
-- Input: Course ID `1`, Category ID `2` (Homework), Name `HW 6`, Max `100`
-- Expected: new assignment_id created, 7 grade rows inserted with score = 0
+**Result:**
+```
++------------+------------+-----------+--------------------------+
+| Student ID | First Name | Last Name | Email                    |
++------------+------------+-----------+--------------------------+
+| 5          | Eva        | Brown     | ebrown@university.edu    |
+| 1          | Alice      | Johnson   | ajohnson@university.edu  |
+| 7          | Grace      | Lee       | glee@university.edu      |
+| 4          | David      | Quincy    | dquincy@university.edu   |
+| 6          | Frank      | Quiroga   | fquiroga@university.edu  |
+| 2          | Bob        | Smith     | bsmith@university.edu    |
+| 3          | Carol      | Williams  | cwilliams@university.edu |
++------------+------------+-----------+--------------------------+
+(7 rows)
+```
 
-### Task 8 — Change Percentages
-- Input: Course ID `1`; change Homework from 20% → 25%, Tests from 50% → 45%
-- Expected: categories updated; warning shown if total != 100%
+---
 
-### Task 9 — Add 2 Points to All
-- Input: Course ID `1`, Assignment ID `7` (Test 1)
-- Expected: all 7 students gain 2 points (capped at 100)
+### Task 6 — All Students & Scores
 
-### Task 10 — Add 2 Points to 'Q' Students
-- Input: Course ID `1`, Assignment ID `2` (HW 1)
-- Qualifying students: David Quincy, Frank Quiroga (both enrolled in CSCI 101)
-- Expected: 2 students' scores updated; others unchanged
+**Input:** Course ID `2` (CSCI 350)
 
-### Task 11 — Compute Grade
-- Input: Course ID `1`, Student ID `1` (Alice Johnson)
-- Expected: breakdown by category, then a weighted final score
+**Result:** 56 rows (7 students × 8 assignments each), ordered by last name then assignment. Sample:
+```
++-----------+------------+---------------+------------+-------+-------+-------+
+| Last Name | First Name | Category      | Assignment | Score | Max   | Pct%  |
++-----------+------------+---------------+------------+-------+-------+-------+
+| Brown     | Eva        | Homework      | HW 1       | 98.0  | 100.0 | 98.0  |
+| Brown     | Eva        | Homework      | HW 2       | 100.0 | 100.0 | 100.0 |
+| Brown     | Eva        | Homework      | HW 3       | 96.0  | 100.0 | 96.0  |
+| ...       | ...        | ...           | ...        | ...   | ...   | ...   |
++-----------+------------+---------------+------------+-------+-------+-------+
+(56 rows total)
+```
 
-### Task 12 — Compute Grade Drop Lowest
-- Input: Course ID `1`, Student ID `1` (Alice Johnson)
-- Expected: lowest HW and lowest Test dropped, final score slightly higher than Task 11
+---
+
+### Task 7 — Add an Assignment
+
+**Input:** Course ID `1`, Category ID `2` (Homework), Name `HW 6`, Max score `100`
+
+**Result:**
+```
+[OK] Assignment 'HW 6' added (ID=24).
+     Grades initialized to 0 for all enrolled students.
+```
+7 grade rows created with score = 0, one per enrolled student.
+
+---
+
+### Task 8 — Change Category Percentages
+
+**Input:** Course ID `1`; Homework 20% → 25%, Tests 50% → 45% (others unchanged)
+
+**Result:**
+```
+[OK] Percentages updated.
+
++----+---------------+------------+
+| ID | Category Name | Percentage |
++----+---------------+------------+
+| 2  | Homework      | 25.0       |
+| 1  | Participation | 10.0       |
+| 4  | Projects      | 20.0       |
+| 3  | Tests         | 45.0       |
++----+---------------+------------+
+Total: 25 + 10 + 20 + 45 = 100%
+```
+
+---
+
+### Task 9 — Add 2 Points to All Students
+
+**Input:** Course ID `1`, Assignment ID `7` (Test 1), +2 points
+
+**Result:**
+```
+[OK] Added 2.0 pt(s) to 7 student(s) (capped at max score).
+```
+All 7 CSCI 101 students gained 2 points on Test 1 (scores capped at 100).
+
+---
+
+### Task 10 — Add 2 Points to Students with 'Q' in Last Name
+
+**Input:** Course ID `1`, Assignment ID `2` (HW 1), +2 points, letter `Q`
+
+**Result:**
+```
+Students qualifying (last name contains 'Q'):
++------------+-----------+---------------+
+| First Name | Last Name | Current Score |
++------------+-----------+---------------+
+| David      | Quincy    | 60.0          |
+| Frank      | Quiroga   | 78.0          |
++------------+-----------+---------------+
+(2 rows)
+
+[OK] Added 2.0 pt(s) to 2 qualifying student(s).
+```
+Quincy: 60 → 62, Quiroga: 78 → 80. All other students unchanged.
+
+---
+
+### Task 11 — Compute Student Grade
+
+**Input:** Course ID `1` (CSCI 101), Student ID `1` (Alice Johnson)
+*(Reflects updated percentages from Task 8 and +2 pts on Test 1 from Task 9)*
+
+**Result:**
+```
+Score Breakdown for Alice Johnson:
++---------------+-----------------------+-------+-------+------+
+| Category      | Assignment            | Score | Max   | Raw% |
++---------------+-----------------------+-------+-------+------+
+| Homework      | HW 1                  | 88.0  | 100.0 | 88.0 |
+| Homework      | HW 2                  | 92.0  | 100.0 | 92.0 |
+| Homework      | HW 3                  | 85.0  | 100.0 | 85.0 |
+| Homework      | HW 4                  | 90.0  | 100.0 | 90.0 |
+| Homework      | HW 5                  | 78.0  | 100.0 | 78.0 |
+| Homework      | HW 6                  | 0.0   | 100.0 | 0.0  |
+| Participation | Participation Overall | 95.0  | 100.0 | 95.0 |
+| Projects      | Project 1             | 90.0  | 100.0 | 90.0 |
+| Tests         | Test 1                | 84.0  | 100.0 | 84.0 |
+| Tests         | Test 2                | 87.0  | 100.0 | 87.0 |
++---------------+-----------------------+-------+-------+------+
+
+Weighted Category Summary:
++---------------+---------+----------+--------------+
+| Category      | Weight% | Cat Avg% | Weighted Pts |
++---------------+---------+----------+--------------+
+| Homework      | 25.0    | 72.17    | 18.04        |
+| Participation | 10.0    | 95.0     | 9.5          |
+| Projects      | 20.0    | 90.0     | 18.0         |
+| Tests         | 45.0    | 85.5     | 38.48        |
++---------------+---------+----------+--------------+
+
+*** Final Grade: 84.02 / 100  (B) ***
+```
+
+---
+
+### Task 12 — Compute Grade (Drop Lowest per Category)
+
+**Input:** Course ID `1` (CSCI 101), Student ID `1` (Alice Johnson)
+
+**Result:**
+```
+Drop-Lowest Grade for Alice Johnson:
+-----------------------------------------------------------------------------------
+Category              Weight         # Asgn  Dropped Assignment            Cat Avg%
+-----------------------------------------------------------------------------------
+Participation         10.0%               1  (only 1 — none dropped)         95.00%
+Homework              25.0%               6  HW 6 (0.0%)                     86.60%
+Tests                 45.0%               2  Test 1 (84.0%)                  87.00%
+Projects              20.0%               1  (only 1 — none dropped)         90.00%
+-----------------------------------------------------------------------------------
+
+*** Final Grade (drop lowest): 88.30 / 100  (B) ***
+```
+HW 6 (0%) and Test 1 (84%) were dropped as the lowest scores in their categories.
+Grade improved from 84.02 → 88.30 (+4.28 points).
 
 ---
 
